@@ -1,6 +1,4 @@
 {
-  description = "An input manager to prevent having to chain devices and allow wasily unlocking keyboard";
-
   inputs = {
     nixpkgs = {
       url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -20,24 +18,54 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
+
+        # Define the exact native compilation and graphics libraries Fyne expects
+        buildDeps = with pkgs; [
+          pkg-config
+        ];
+
+        runtimeDeps = with pkgs; [
+          libX11
+          libXcursor
+          libXrandr
+          libXinerama
+          libXi
+          libXext
+          libXfixes
+          libGL
+          libxkbcommon
+          wayland
+          libXxf86vm
+        ];
       in
       {
         packages = {
-          # The actual package
           default = pkgs.buildGoModule {
-            pname = "input-manager";
+            pname = "fakeInput";
             version = "2";
             src = ./.;
             vendorHash = "sha256-sWP8A1OlAOyf0DzSE5i2rP9pzrL+opJvbwGAvtxXuUg=";
+
+            nativeBuildInputs = buildDeps;
+            buildInputs = runtimeDeps;
           };
         };
+
         devShells = {
-          # Development environment
           default = pkgs.mkShell {
-            buildInputs = with pkgs; [
-              go
-              gopls
-            ];
+            nativeBuildInputs = buildDeps;
+            buildInputs =
+              with pkgs;
+              [
+                go
+                gopls
+              ]
+              ++ runtimeDeps;
+
+            # Crucial for NixOS: Tells Cgo exactly where to find your live graphics drivers
+            shellHook = ''
+              export LD_LIBRARY_PATH=${pkgs.lib.makeLibraryPath runtimeDeps}:$LD_LIBRARY_PATH
+            '';
           };
         };
       }

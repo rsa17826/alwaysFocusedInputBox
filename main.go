@@ -40,7 +40,6 @@ func main() {
 
 	textBox := widget.NewEntry()
 	textBox.SetPlaceHolder("Captured background text will appear here...")
-
 	myWindow.SetContent(container.NewVBox(textBox))
 
 	mgr, err := IMan.Connect(IMan.ModeBlocking, IMan.ModeInjection)
@@ -49,9 +48,14 @@ func main() {
 	}
 	defer mgr.Close()
 
-	// This variable stores what we ultimately return when the app finishes
 	var finalResult string
 	ctrlPressed := false
+
+	// Helper to handle safe UI updates directly inside Fyne's main loop thread execution boundary
+	updateTextSafe := func(newText string) {
+		textBox.SetText(newText)
+		textBox.Refresh()
+	}
 
 	go func() {
 		for {
@@ -64,7 +68,6 @@ func main() {
 				code := routedEvent.Event.Code
 				val := routedEvent.Event.Value // 0 = Release, 1 = Press, 2 = Repeat
 
-				// Monitor Control key states
 				if code == input.KEY_LEFTCTRL || code == input.KEY_RIGHTCTRL {
 					if val == 1 {
 						ctrlPressed = true
@@ -73,40 +76,37 @@ func main() {
 					}
 				}
 
-				// Process Key-Down and Repeat events
 				if val == 1 || val == 2 {
 					switch code {
-					case input.KEY_ESC: // --- ESCAPE KEY HANDLING ---
-						// Set finalResult to empty and terminate the GUI application thread safely
+					case input.KEY_ESC:
 						finalResult = ""
 						myApp.Quit()
 						return
 
-					case input.KEY_ENTER, input.KEY_KPENTER: // --- ENTER KEY HANDLING ---
-						// Optional addition: Save current string state and close on Enter execution
+					case input.KEY_ENTER, input.KEY_KPENTER:
 						finalResult = textBox.Text
 						myApp.Quit()
 						return
 
-					case input.KEY_BACKSPACE: // Backspace
+					case input.KEY_BACKSPACE:
 						currentText := textBox.Text
 						if ctrlPressed {
 							trimmed := strings.TrimRight(currentText, " ")
 							lastSpace := strings.LastIndex(trimmed, " ")
 							if lastSpace == -1 {
-								textBox.SetText("")
+								updateTextSafe("")
 							} else {
-								textBox.SetText(trimmed[:lastSpace+1])
+								updateTextSafe(trimmed[:lastSpace+1])
 							}
 						} else {
 							if len(currentText) > 0 {
-								textBox.SetText(currentText[:len(currentText)-1])
+								updateTextSafe(currentText[:len(currentText)-1])
 							}
 						}
 
 					default:
 						if char, found := evdevToChar[code]; found {
-							textBox.SetText(textBox.Text + char)
+							updateTextSafe(textBox.Text + char)
 						}
 					}
 				}
@@ -118,9 +118,6 @@ func main() {
 		}
 	}()
 
-	// Blocks main routine execution until myApp.Quit() is called
 	myWindow.ShowAndRun()
-
-	// Output result string right back to terminal stdout pipeline
 	fmt.Println(finalResult)
 }
