@@ -38,21 +38,21 @@ func main() {
 	var title string
 	var placeholder string
 	var entryText string
+	var winClass string // Added target variable for class selection
 
-	// 1. Fixed Targets: Points each flag to its correct variable address
 	argparse.ParseArgs([]argparse.ArgumentData{
 		{Keys: []string{"title"}, AfterCount: 1, Target: &title, Description: "window title", VarArgs: false, AllowDupes: false, Default: []any{"Background Input Capture"}},
 		{Keys: []string{"text"}, AfterCount: 1, Target: &placeholder, Description: "placeholder text for the input box", VarArgs: false, AllowDupes: false, Default: []any{"Nyo Text Set"}},
 		{Keys: []string{"entry-text"}, AfterCount: 1, Target: &entryText, Description: "default value in the input box for if just pressing enter", VarArgs: false, AllowDupes: false, Default: []any{""}},
+		{Keys: []string{"class"}, AfterCount: 1, Target: &winClass, Description: "set window class name for WM rules", VarArgs: false, AllowDupes: false, Default: []any{"alwaysFocusedInputBox"}},
 	})
 
-	myApp := app.New()
+	// CRITICAL FIX: Passing the ID forces the Linux compositor to use this string as the WM_CLASS
+	myApp := app.NewWithID(winClass)
 	myWindow := myApp.NewWindow(title)
 	myWindow.Resize(fyne.NewSize(400, 50))
 
 	textBox := widget.NewEntry()
-
-	// 2. Applied Args: Hooking up the parsed parameters directly to the textbox configuration
 	textBox.SetPlaceHolder(placeholder)
 	textBox.SetText(entryText)
 
