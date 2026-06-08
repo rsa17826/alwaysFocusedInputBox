@@ -41,7 +41,7 @@
       {
         packages = {
           default = pkgs.buildGoModule {
-            pname = "fakeInput";
+            pname = "alwaysFocusedInputBox";
             version = "2";
             src = ./.;
             vendorHash = "sha256-sWP8A1OlAOyf0DzSE5i2rP9pzrL+opJvbwGAvtxXuUg=";

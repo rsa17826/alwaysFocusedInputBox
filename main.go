@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	argparse "github.com/rsa17826/go-arg-lib"
 	"github.com/rsa17826/go-input-lib"
 	"github.com/rsa17826/input-manager/IMan"
 )
@@ -34,12 +35,27 @@ var evdevToChar = map[uint16]string{
 }
 
 func main() {
+	var title string
+	var placeholder string
+	var entryText string
+
+	// 1. Fixed Targets: Points each flag to its correct variable address
+	argparse.ParseArgs([]argparse.ArgumentData{
+		{Keys: []string{"title"}, AfterCount: 1, Target: &title, Description: "window title", VarArgs: false, AllowDupes: false, Default: []any{"Background Input Capture"}},
+		{Keys: []string{"text"}, AfterCount: 1, Target: &placeholder, Description: "placeholder text for the input box", VarArgs: false, AllowDupes: false, Default: []any{"Nyo Text Set"}},
+		{Keys: []string{"entry-text"}, AfterCount: 1, Target: &entryText, Description: "default value in the input box for if just pressing enter", VarArgs: false, AllowDupes: false, Default: []any{""}},
+	})
+
 	myApp := app.New()
-	myWindow := myApp.NewWindow("Background Input Capture")
+	myWindow := myApp.NewWindow(title)
 	myWindow.Resize(fyne.NewSize(400, 100))
 
 	textBox := widget.NewEntry()
-	textBox.SetPlaceHolder("Captured background text will appear here...")
+
+	// 2. Applied Args: Hooking up the parsed parameters directly to the textbox configuration
+	textBox.SetPlaceHolder(placeholder)
+	textBox.SetText(entryText)
+
 	myWindow.SetContent(container.NewVBox(textBox))
 
 	mgr, err := IMan.Connect(IMan.ModeBlocking, IMan.ModeInjection)
@@ -51,7 +67,6 @@ func main() {
 	var finalResult string
 	ctrlPressed := false
 
-	// Helper to handle safe UI updates directly inside Fyne's main loop thread execution boundary
 	updateTextSafe := func(newText string) {
 		fyne.Do(func() {
 			textBox.SetText(newText)
@@ -66,14 +81,15 @@ func main() {
 				return
 			}
 
-			if routedEvent.Event.Type == 1 { // EV_KEY
+			if routedEvent.Event.Type == input.EV_KEY {
 				code := routedEvent.Event.Code
-				val := routedEvent.Event.Value // 0 = Release, 1 = Press, 2 = Repeat
+				val := routedEvent.Event.Value
 
 				if code == input.KEY_LEFTCTRL || code == input.KEY_RIGHTCTRL {
-					if val == 1 {
+					switch val {
+					case 1:
 						ctrlPressed = true
-					} else if val == 0 {
+					case 0:
 						ctrlPressed = false
 					}
 				}
@@ -119,7 +135,7 @@ func main() {
 			}
 
 			if routedEvent.From == IMan.ModeBlocking {
-				_, _ = mgr.BlockInput(0)
+				_, _ = mgr.BlockInput(1)
 			}
 		}
 	}()
