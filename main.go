@@ -48,7 +48,7 @@ func main() {
 
 	myApp := app.New()
 	myWindow := myApp.NewWindow(title)
-	myWindow.Resize(fyne.NewSize(400, 100))
+	myWindow.Resize(fyne.NewSize(400, 50))
 
 	textBox := widget.NewEntry()
 
