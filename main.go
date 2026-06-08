@@ -53,8 +53,10 @@ func main() {
 
 	// Helper to handle safe UI updates directly inside Fyne's main loop thread execution boundary
 	updateTextSafe := func(newText string) {
-		textBox.SetText(newText)
-		textBox.Refresh()
+		fyne.Do(func() {
+			textBox.SetText(newText)
+			textBox.Refresh()
+		})
 	}
 
 	go func() {
@@ -80,12 +82,16 @@ func main() {
 					switch code {
 					case input.KEY_ESC:
 						finalResult = ""
-						myApp.Quit()
+						fyne.DoAndWait(func() {
+							myApp.Quit()
+						})
 						return
 
 					case input.KEY_ENTER, input.KEY_KPENTER:
 						finalResult = textBox.Text
-						myApp.Quit()
+						fyne.DoAndWait(func() {
+							myApp.Quit()
+						})
 						return
 
 					case input.KEY_BACKSPACE:
@@ -113,7 +119,7 @@ func main() {
 			}
 
 			if routedEvent.From == IMan.ModeBlocking {
-				_, _ = mgr.BlockInput(1)
+				_, _ = mgr.BlockInput(0)
 			}
 		}
 	}()
