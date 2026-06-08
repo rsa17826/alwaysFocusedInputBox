@@ -94,15 +94,9 @@ func main() {
 					}
 				}
 
-				if val == 1 || val == 2 {
+				switch val {
+				case 0:
 					switch code {
-					case input.KEY_ESC:
-						finalResult = ""
-						fyne.DoAndWait(func() {
-							myApp.Quit()
-						})
-						return
-
 					case input.KEY_ENTER, input.KEY_KPENTER:
 						finalResult = textBox.Text
 						fyne.DoAndWait(func() {
@@ -125,6 +119,15 @@ func main() {
 								updateTextSafe(currentText[:len(currentText)-1])
 							}
 						}
+					}
+				case 1, 2:
+					switch code {
+					case input.KEY_ESC:
+						finalResult = ""
+						fyne.DoAndWait(func() {
+							myApp.Quit()
+						})
+						return
 
 					default:
 						if char, found := evdevToChar[code]; found {
