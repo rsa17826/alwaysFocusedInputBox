@@ -44,7 +44,7 @@
             pname = "alwaysFocusedInputBox";
             version = "2";
             src = ./.;
-            vendorHash = "sha256-YtFVR2eGDCefrTtlrRsjzX9jko1p8zInKIM8HWAnhhI=";
+            vendorHash = "sha256-Mk7oKs/egfvBZh9HHh4yNjfIvmsps+pnlVwlB4Eb2Go=";
 
             nativeBuildInputs = buildDeps;
             buildInputs = runtimeDeps;
