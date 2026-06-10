@@ -56,7 +56,7 @@ func main() {
 
 	myWindow.SetContent(container.NewVBox(titleText, textBox))
 
-	mgr, err := IMan.Connect(IMan.ModeBlocking, IMan.ModeInjection)
+	mgr, err := IMan.Connect("always focused input box", IMan.ModeBlocking, IMan.ModeInjection)
 	if err != nil {
 		log.Fatalf("Failed to initialize input manager: %v", err)
 	}
