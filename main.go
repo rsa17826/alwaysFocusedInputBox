@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -56,7 +59,7 @@ func main() {
 
 	myWindow.SetContent(container.NewVBox(titleText, textBox))
 
-	mgr, err := IMan.Connect("always focused input box", IMan.ModeBlocking, IMan.ModeInjection)
+	mgr, err := IMan.Connect("always focused input box", IMan.ModeFilter, IMan.ModeInjection)
 	if err != nil {
 		log.Fatalf("Failed to initialize input manager: %v", err)
 	}
@@ -71,7 +74,13 @@ func main() {
 			textBox.Refresh()
 		})
 	}
-
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, syscall.SIGABRT)
+		<-sigChan
+		mgr.Close()
+		os.Exit(0)
+	}()
 	go func() {
 		for {
 			routedEvent, err := mgr.ReadNext()
@@ -95,6 +104,12 @@ func main() {
 				switch val {
 				case 0:
 					switch code {
+					case input.KEY_ESC:
+						finalResult = ""
+						fyne.DoAndWait(func() {
+							myApp.Quit()
+						})
+						return
 					case input.KEY_ENTER, input.KEY_KPENTER:
 						finalResult = textBox.Text
 						fyne.DoAndWait(func() {
@@ -120,13 +135,6 @@ func main() {
 					}
 				case 1, 2:
 					switch code {
-					case input.KEY_ESC:
-						finalResult = ""
-						fyne.DoAndWait(func() {
-							myApp.Quit()
-						})
-						return
-
 					default:
 						if char, found := evdevToChar[code]; found {
 							updateTextSafe(textBox.Text + char)
@@ -135,7 +143,7 @@ func main() {
 				}
 			}
 
-			if routedEvent.From == IMan.ModeBlocking {
+			if routedEvent.From == IMan.ModeFilter {
 				_, _ = mgr.BlockInput(1)
 			}
 		}
